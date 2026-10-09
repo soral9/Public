@@ -32,13 +32,39 @@
   </section>
 
   <section class="card" id="dates" hidden>
-    <span class="eyebrow">候補日</span>
-    <div class="row2">
-      <label class="field"><span><span class="tag d1">①</span> 候補日①</span><input id="d1" placeholder="例: 11/8(土) 14:00"></label>
-      <label class="field"><span><span class="tag d2">②</span> 候補日②</span><input id="d2" placeholder="例: 11/15(土) 11:00"></label>
+    <span class="eyebrow">今回の候補日</span>
+    <div class="dates" id="autoDates" hidden>
+      <div><span class="tag d1">①</span> <span id="auto1">…</span></div>
+      <div><span class="tag d2">②</span> <span id="auto2">…</span></div>
+      <p class="sub" id="autoNote">年間リストから、今日以降の直近2回を自動で出しています。</p>
     </div>
-    <div class="actions"><button class="btn secondary" id="btnSaveDates">候補日を保存</button></div>
-    <div class="toast" id="dateToast" aria-live="polite"></div>
+    <div id="manualDates">
+      <div class="row2">
+        <label class="field"><span><span class="tag d1">①</span> 候補日①</span><input id="d1" placeholder="例: 11/8(土) 14:00"></label>
+        <label class="field"><span><span class="tag d2">②</span> 候補日②</span><input id="d2" placeholder="例: 11/15(土) 11:00"></label>
+      </div>
+      <div class="actions"><button class="btn secondary" id="btnSaveDates">候補日を保存</button></div>
+      <div class="toast" id="dateToast" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="card" id="yearly" hidden>
+    <details id="yearlyBox">
+      <summary><span class="eyebrow">年間の候補日リスト（年1回貼り付け）</span></summary>
+      <div class="stack">
+        <p class="sub">美容院から届いた一覧をそのまま貼り付けてください。「10月25日11時30分：」のような行を読み取ります。</p>
+        <div class="row2">
+          <label class="field">最初の行の年<input id="startYear" type="number" inputmode="numeric" min="2020" max="2100"></label>
+        </div>
+        <label class="field">一覧<textarea id="yearlyText" rows="8" placeholder="10月25日11時30分：&#10;10月31日10時：&#10;11月23日11時：&#10;…"></textarea></label>
+        <div class="actions">
+          <button class="btn secondary" id="btnSaveYearly">リストを保存</button>
+          <button class="btn secondary" id="btnClearYearly">リストを消して手入力に戻す</button>
+        </div>
+        <div class="toast" id="yearlyToast" aria-live="polite"></div>
+        <ol class="datelist" id="dateList"></ol>
+      </div>
+    </details>
   </section>
 
   <section class="card" id="people" hidden>
@@ -84,9 +110,9 @@
   <section class="card" id="tools" hidden>
     <div class="actions">
       <button class="btn secondary" id="btnRefresh">最新に更新</button>
-      <button class="btn secondary" id="btnReset">来月用にリセット</button>
+      <button class="btn secondary" id="btnReset">選択をリセット</button>
     </div>
-    <p class="sub" id="resetConfirm" hidden>2人の選択と候補日を消します。よろしければもう一度「来月用にリセット」を押してください。</p>
+    <p class="sub" id="resetConfirm" hidden>2人の選択を消します（候補日リストは残ります）。よろしければもう一度「選択をリセット」を押してください。</p>
     <p class="meta" id="meta"></p>
     <p class="note err" id="err" hidden></p>
   </section>
@@ -106,25 +132,47 @@
   function render() {
     show($('noRoom'), !id);
     if (!id && S.storeName() === 'firebase' && !$('dbUrl').value) $('dbUrl').value = S.dbUrl();
-    ['dates', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
+    ['dates', 'yearly', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
     if (!id) { show($('secR'), false); show($('waiting'), false); return; }
     $('bookmark').href = location.href;
     $('linkA').href = S.pageUrl('ani.html', id);
     $('linkB').href = S.pageUrl('otouto.html', id);
     $('nameA').textContent = S.NAMES.a; $('nameB').textContent = S.NAMES.b;
     if (!room) return;
-    if (document.activeElement !== $('d1')) $('d1').value = room.d1;
-    if (document.activeElement !== $('d2')) $('d2').value = room.d2;
-    setPill($('pillA'), room.a !== null); setPill($('pillB'), room.b !== null);
+    var v = S.view(room);
+    show($('autoDates'), v.auto); show($('manualDates'), !v.auto);
+    if (v.auto) {
+      $('auto1').textContent = v.d1 || '(今年のリストは終了。新しいリストを貼り付けてください)';
+      $('auto2').textContent = v.d2 || '(次の候補日がありません)';
+    } else {
+      if (document.activeElement !== $('d1')) $('d1').value = room.d1;
+      if (document.activeElement !== $('d2')) $('d2').value = room.d2;
+    }
+    if (document.activeElement !== $('yearlyText') && !$('yearlyText').value && room.dates.length) {
+      $('yearlyText').value = room.dates.map(function (iso) { return S.fmtDate(iso, true); }).join('\n');
+    }
+    renderDateList(room.dates, v.next);
+    $('yearlyBox').open = !room.dates.length || $('yearlyBox').open;
+    setPill($('pillA'), v.a !== null); setPill($('pillB'), v.b !== null);
     var r = S.renderResultInto($('result'), room);
     show($('secR'), !!r); show($('waiting'), !r);
     if (!r) {
       var left = [];
-      if (room.a === null) left.push(S.NAMES.a);
-      if (room.b === null) left.push(S.NAMES.b);
+      if (v.a === null) left.push(S.NAMES.a);
+      if (v.b === null) left.push(S.NAMES.b);
       $('waitMsg').textContent = left.join('と') + 'の選択待ちです。2人とも選ぶと、ここに結果が表示されます。';
     }
     $('meta').textContent = (room.updated ? '最終更新: ' + S.fmtTime(room.updated) + ' ／ ' : '') + '保存先: ' + (S.storeName() === 'firebase' ? 'Firebase' : 'jsonblob');
+  }
+  function renderDateList(dates, next) {
+    var ol = $('dateList'); ol.innerHTML = '';
+    dates.forEach(function (iso) {
+      var li = document.createElement('li'); li.textContent = S.fmtDate(iso, true);
+      var i = next.indexOf(iso);
+      if (i >= 0) { li.className = 'now'; li.textContent += i === 0 ? '　← ①' : '　← ②'; }
+      else if (S.upcoming([iso]).length === 0) li.className = 'past';
+      ol.appendChild(li);
+    });
   }
   function setPill(el, done) { el.textContent = done ? '選択済み' : '未回答'; el.className = 'pill ' + (done ? 'done' : 'todo'); }
 
@@ -159,11 +207,24 @@
       .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); })
       .then(function () { $('btnSaveDates').disabled = false; });
   });
+  $('btnSaveYearly').addEventListener('click', function () {
+    var dates = S.parseDates($('yearlyText').value, $('startYear').value || new Date().getFullYear());
+    if (!dates.length) { toast('yearlyToast', '日付を読み取れませんでした。「10月25日11時30分」の形で貼り付けてください。'); return; }
+    $('btnSaveYearly').disabled = true;
+    S.updateRoom(id, { dates: dates, a: null, b: null, round: '' }).then(function (r) { room = r; $('yearlyText').value = ''; render(); toast('yearlyToast', dates.length + '件を保存しました。'); })
+      .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); })
+      .then(function () { $('btnSaveYearly').disabled = false; });
+  });
+  $('btnClearYearly').addEventListener('click', function () {
+    S.updateRoom(id, { dates: [], a: null, b: null, round: '' }).then(function (r) { room = r; $('yearlyText').value = ''; render(); })
+      .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); });
+  });
+  $('startYear').value = new Date().getFullYear();
   $('btnRefresh').addEventListener('click', refresh);
   $('btnReset').addEventListener('click', function () {
     if (!resetArmed) { resetArmed = true; show($('resetConfirm'), true); return; }
     resetArmed = false; show($('resetConfirm'), false);
-    S.updateRoom(id, { d1: '', d2: '', a: null, b: null }).then(function (r) { room = r; render(); })
+    S.updateRoom(id, { a: null, b: null, round: '' }).then(function (r) { room = r; render(); })
       .catch(function (e) { setErr('リセットに失敗しました。(' + e.message + ')'); });
   });
 

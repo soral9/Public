@@ -90,3 +90,11 @@ label.field input:focus { outline: 2px solid var(--accent); outline-offset: 1px;
 .meta { font-size: .8rem; color: var(--muted); }
 footer { color: var(--muted); font-size: .8rem; text-align: center; }
 footer a { color: inherit; }
+
+label.field textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; resize: vertical; }
+label.field textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.stack { display: grid; gap: 12px; padding-top: 12px; }
+summary { cursor: pointer; }
+.datelist { margin: 0; padding-left: 1.4em; font-variant-numeric: tabular-nums; }
+.datelist li.past { color: var(--muted); text-decoration: line-through; }
+.datelist li.now { font-weight: 700; }

@@ -19,12 +19,12 @@
     show($('secChoose'), false);
   }
 
-  function renderChoices() {
+  function renderChoices(v) {
     var c = $('choices'); c.innerHTML = '';
     S.OPTIONS.forEach(function (o) {
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'choice'; b.dataset.v = o.v;
-      b.setAttribute('aria-pressed', room && room[role] === o.v ? 'true' : 'false');
+      b.setAttribute('aria-pressed', v && v[role] === o.v ? 'true' : 'false');
       b.innerHTML = '<span>' + o.label + '</span><small>' + o.sub + '</small>';
       b.addEventListener('click', function () { choose(o.v); });
       c.appendChild(b);
@@ -32,12 +32,13 @@
   }
   function render() {
     if (!room) return;
-    $('d1').textContent = room.d1 || '(未入力)';
-    $('d2').textContent = room.d2 || '(未入力)';
-    renderChoices();
-    var mine = room[role] !== null;
+    var v = S.view(room);
+    $('d1').textContent = v.d1 || '(未入力)';
+    $('d2').textContent = v.d2 || '(未入力)';
+    renderChoices(v);
+    var mine = v[role] !== null;
     $('state').textContent = mine
-      ? 'あなたの選択: ' + S.LABEL[room[role]] + '（押し直すと変更できます）'
+      ? 'あなたの選択: ' + S.LABEL[v[role]] + '（押し直すと変更できます）'
       : 'まだ選んでいません。';
     var r = S.renderResultInto($('result'), room);
     show($('secR'), !!r);
@@ -48,8 +49,7 @@
   function choose(v) {
     var btns = document.querySelectorAll('.choice');
     btns.forEach(function (b) { b.disabled = true; });
-    var patch = {}; patch[role] = v;
-    S.updateRoom(id, patch).then(function (r) { room = r; setErr(''); render(); $('toast').textContent = '送信しました。'; setTimeout(function () { $('toast').textContent = ''; }, 3000); })
+    S.saveChoice(id, role, v).then(function (r) { room = r; setErr(''); render(); $('toast').textContent = '送信しました。'; setTimeout(function () { $('toast').textContent = ''; }, 3000); })
       .catch(function (e) { setErr('送信に失敗しました。もう一度押してください。(' + e.message + ')'); })
       .then(function () { btns.forEach(function (b) { b.disabled = false; }); });
   }
