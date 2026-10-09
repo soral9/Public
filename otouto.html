@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<title>弟の選択｜美容院 日程きめ</title>
+</head>
+<body>
+<main>
+  <header>
+    <h1><span id="who">弟</span>の選択</h1>
+    <p class="sub">2つの候補日のうち、希望を1つ選んでください。押した時点で送信されます。</p>
+  </header>
+  <section class="card">
+    <span class="eyebrow">候補日</span>
+    <div class="dates">
+      <div><span class="tag d1">①</span> <span id="d1">…</span></div>
+      <div><span class="tag d2">②</span> <span id="d2">…</span></div>
+    </div>
+  </section>
+  <section class="card" id="secChoose">
+    <span class="eyebrow">希望</span>
+    <div class="choices" id="choices"></div>
+    <p class="sub" id="state"></p>
+    <div class="toast" id="toast" aria-live="polite"></div>
+  </section>
+  <section class="card" id="secR" hidden>
+    <span class="eyebrow">結果</span>
+    <div class="result" id="result"></div>
+  </section>
+  <section class="card" id="waiting" hidden>
+    <span class="eyebrow">結果</span>
+    <p class="sub" id="waitMsg"></p>
+  </section>
+  <section class="card">
+    <div class="actions">
+      <a class="btn secondary" id="indexLink" href="index.html">トップページへ</a>
+      <button class="btn secondary" id="btnRefresh">最新に更新</button>
+    </div>
+    <p class="meta" id="meta"></p>
+    <p class="note err" id="err" hidden></p>
+  </section>
+</main>
+<script>window.SALON_ROLE = 'b';</script>
+<script src="choose.js"></script>
+</body>
+</html>
