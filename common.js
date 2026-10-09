@@ -15,15 +15,63 @@
   var LABEL = {}; OPTIONS.forEach(function (o) { LABEL[o.v] = o.label; });
   function isChoice(v) { return OPTIONS.some(function (o) { return o.v === v; }); }
 
-  function emptyRoom() { return { d1: '', d2: '', a: null, b: null, updated: 0 }; }
+  function emptyRoom() { return { d1: '', d2: '', dates: [], round: '', a: null, b: null, updated: 0 }; }
   function normalize(x) {
     var r = emptyRoom();
     if (x && typeof x === 'object') {
       r.d1 = String(x.d1 || ''); r.d2 = String(x.d2 || '');
+      r.dates = Array.isArray(x.dates) ? x.dates.filter(function (d) { return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(d); }).sort() : [];
+      r.round = String(x.round || '');
       r.a = isChoice(x.a) ? x.a : null; r.b = isChoice(x.b) ? x.b : null;
       r.updated = Number(x.updated) || 0;
     }
     return r;
+  }
+
+  // ---- 年間候補日リスト ----
+  // 「10月25日11時30分：」のような行を解釈。年は startYear から始め、月が戻ったら翌年にする。
+  function toHalf(t) { return t.replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function parseDates(text, startYear) {
+    var re = /(\d{1,2})月(\d{1,2})日(?:\s*(\d{1,2})\s*[時:：]\s*(\d{1,2})?\s*分?)?/g;
+    var out = [], year = Number(startYear), prevMonth = 0, m;
+    var src = toHalf(String(text || ''));
+    while ((m = re.exec(src)) !== null) {
+      var mo = +m[1], d = +m[2], h = m[3] === undefined ? 0 : +m[3], mi = m[4] === undefined ? 0 : +m[4];
+      if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59) continue;
+      if (prevMonth && mo < prevMonth) year++;
+      prevMonth = mo;
+      out.push(year + '-' + pad(mo) + '-' + pad(d) + 'T' + pad(h) + ':' + pad(mi));
+    }
+    return out.sort();
+  }
+  var WEEK = ['日', '月', '火', '水', '木', '金', '土'];
+  function parseIso(iso) {
+    var p = iso.split(/[-T:]/).map(Number);
+    return new Date(p[0], p[1] - 1, p[2], p[3], p[4]);
+  }
+  function fmtDate(iso, withYear) {
+    var d = parseIso(iso);
+    return (withYear ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日(' + WEEK[d.getDay()] + ') ' + d.getHours() + ':' + pad(d.getMinutes());
+  }
+  // 今日以降の直近2件
+  function upcoming(dates, now) {
+    var t0 = new Date(now || Date.now()); t0.setHours(0, 0, 0, 0);
+    return dates.filter(function (iso) { return parseIso(iso) >= t0; }).slice(0, 2);
+  }
+  // 画面に出す「今回の候補日」と、その回に対する選択。リストがなければ手入力の d1/d2 を使う。
+  function view(room, now) {
+    var v = { d1: room.d1, d2: room.d2, key: 'manual', auto: false, a: room.a, b: room.b, list: room.dates, next: [] };
+    if (room.dates.length) {
+      var up = upcoming(room.dates, now);
+      v.auto = true; v.next = up;
+      v.d1 = up[0] ? fmtDate(up[0]) : ''; v.d2 = up[1] ? fmtDate(up[1]) : '';
+      v.key = up.join('|') || 'none';
+    }
+    // 別の回の選択は無効
+    if (room.round && room.round !== v.key) { v.a = null; v.b = null; }
+    if (!room.round && v.key !== 'manual') { v.a = null; v.b = null; }
+    return v;
   }
 
   // ---- 判定 ----
@@ -134,12 +182,22 @@
       return store.save(id, cur).then(function () { return cur; });
     });
   }
+  // 選択を保存。回(round)が変わっていたら相手の古い選択も消す
+  function saveChoice(id, role, value) {
+    return loadRoom(id).then(function (cur) {
+      var key = view(cur).key;
+      if (cur.round !== key) { cur.a = null; cur.b = null; cur.round = key; }
+      cur[role] = value; cur.updated = Date.now();
+      return store.save(id, cur).then(function () { return cur; });
+    });
+  }
   function createRoom() { var r = emptyRoom(); r.updated = Date.now(); return store.create(r); }
 
   // ---- 共通UI ----
   function $(id) { return document.getElementById(id); }
   function renderResultInto(box, room) {
-    var r = decide(room); box.innerHTML = '';
+    var v = view(room);
+    var r = decide(v); box.innerHTML = '';
     if (!r) return null;
     var aDay = r.aTo, bDay = r.aTo === 1 ? 2 : 1;
     var assign = document.createElement('div'); assign.className = 'assign';
@@ -147,23 +205,24 @@
       var d = document.createElement('div');
       d.innerHTML = '<span class="tag ' + (p[1] === 1 ? 'd1' : 'd2') + '">' + (p[1] === 1 ? '①' : '②') + '</span><span class="who"></span><span class="when"></span>';
       d.querySelector('.who').textContent = p[0];
-      d.querySelector('.when').textContent = (p[1] === 1 ? room.d1 : room.d2) || '(候補日 未入力)';
+      d.querySelector('.when').textContent = (p[1] === 1 ? v.d1 : v.d2) || '(候補日 未入力)';
       assign.appendChild(d);
     });
     box.appendChild(assign);
     var note = document.createElement('p'); note.className = 'note ' + (r.conflict ? 'warn' : 'ok'); note.textContent = r.reason; box.appendChild(note);
     var votes = document.createElement('p'); votes.className = 'votes';
-    votes.innerHTML = '選択: <b></b> = ' + LABEL[room.a] + ' / <b></b> = ' + LABEL[room.b];
+    votes.innerHTML = '選択: <b></b> = ' + LABEL[v.a] + ' / <b></b> = ' + LABEL[v.b];
     votes.querySelectorAll('b')[0].textContent = NAMES.a; votes.querySelectorAll('b')[1].textContent = NAMES.b;
     box.appendChild(votes);
     return r;
   }
   function shareTextFor(room, r) {
+    var v = view(room);
     if (r) {
       var a1 = r.aTo === 1 ? NAMES.a : NAMES.b, a2 = r.aTo === 1 ? NAMES.b : NAMES.a;
-      return '【美容院 結果】\n① ' + room.d1 + ' → ' + a1 + '\n② ' + room.d2 + ' → ' + a2 + '\n';
+      return '【美容院 結果】\n① ' + v.d1 + ' → ' + a1 + '\n② ' + v.d2 + ' → ' + a2 + '\n';
     }
-    return '【美容院 日程きめ】\n① ' + room.d1 + '\n② ' + room.d2 + '\n';
+    return '【美容院 日程きめ】\n① ' + v.d1 + '\n② ' + v.d2 + '\n';
   }
   function lineShareUrl(text) { return 'https://line.me/R/share?text=' + encodeURIComponent(text); }
   function copyText(text) {
@@ -178,7 +237,8 @@
 
   window.Salon = {
     NAMES: NAMES, OPTIONS: OPTIONS, LABEL: LABEL, decide: decide, normalize: normalize,
-    roomId: roomId, pageUrl: pageUrl, loadRoom: loadRoom, updateRoom: updateRoom, createRoom: createRoom,
+    roomId: roomId, pageUrl: pageUrl, loadRoom: loadRoom, updateRoom: updateRoom, saveChoice: saveChoice, createRoom: createRoom,
+    view: view, parseDates: parseDates, fmtDate: fmtDate, upcoming: upcoming,
     $: $, renderResultInto: renderResultInto, shareTextFor: shareTextFor, lineShareUrl: lineShareUrl,
     copyText: copyText, fmtTime: fmtTime, setDbUrl: setDbUrl, storeName: function () { return storeName; }, dbUrl: function () { return dbUrl; }
   };
