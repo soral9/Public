@@ -3,7 +3,7 @@
   'use strict';
   var CFG = window.SALON_CONFIG || {};
   CFG.firebaseUrlFixed = String(CFG.firebaseUrl || '').trim();
-  var NAMES = CFG.names || { a: '兄', b: '弟' };
+  var NAMES = CFG.names || { a: 'Aさん', b: 'Bさん' };
 
   var OPTIONS = [
     { v: -2, label: '絶対①', sub: '①じゃないと無理' },
@@ -220,9 +220,9 @@
     var v = view(room);
     if (r) {
       var a1 = r.aTo === 1 ? NAMES.a : NAMES.b, a2 = r.aTo === 1 ? NAMES.b : NAMES.a;
-      return '【美容院 結果】\n① ' + v.d1 + ' → ' + a1 + '\n② ' + v.d2 + ' → ' + a2 + '\n';
+      return '【日程決め 結果】\n① ' + v.d1 + ' → ' + a1 + '\n② ' + v.d2 + ' → ' + a2 + '\n';
     }
-    return '【美容院 日程きめ】\n① ' + v.d1 + '\n② ' + v.d2 + '\n';
+    return '【日程決め】\n① ' + v.d1 + '\n② ' + v.d2 + '\n';
   }
   function lineShareUrl(text) { return 'https://line.me/R/share?text=' + encodeURIComponent(text); }
   function copyText(text) {

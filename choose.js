@@ -1,4 +1,4 @@
-/* 兄・弟の選択ページ共通。 window.SALON_ROLE = 'a' | 'b' を各ページで指定 */
+/* A・Bの選択ページ共通。 window.SALON_ROLE = 'a' | 'b' を各ページで指定 */
 (function () {
   'use strict';
   var S = window.Salon, $ = S.$;
@@ -10,7 +10,7 @@
   function show(el, on) { el.hidden = !on; }
   function setErr(msg) { $('err').textContent = msg || ''; show($('err'), !!msg); }
 
-  document.title = me + 'の選択｜美容院 日程きめ';
+  document.title = me + 'の選択｜日程決め';
   $('who').textContent = me;
   $('indexLink').href = id ? S.pageUrl('index.html', id) : 'index.html';
 
