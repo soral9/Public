@@ -35,7 +35,6 @@
     <div class="dates" id="autoDates" hidden>
       <div><span class="tag d1">①</span> <span id="auto1">…</span></div>
       <div><span class="tag d2">②</span> <span id="auto2">…</span></div>
-      <p class="sub" id="autoNote">年間リストから、今日以降の直近2回を自動で出しています。</p>
     </div>
     <div id="manualDates">
       <div class="row2">
@@ -49,16 +48,12 @@
 
   <section class="card" id="yearly" hidden>
     <details id="yearlyBox">
-      <summary><span class="eyebrow">年間の候補日リスト（年1回貼り付け）</span></summary>
+      <summary><span class="eyebrow">年間の候補日リスト</span></summary>
       <div class="stack">
-        <p class="sub">美容院から届いた一覧をそのまま貼り付けてください。「10月25日11時30分：」のような行を読み取ります。</p>
-        <div class="row2">
-          <label class="field">最初の行の年<input id="startYear" type="number" inputmode="numeric" min="2020" max="2100"></label>
-        </div>
-        <label class="field">一覧<textarea id="yearlyText" rows="8" placeholder="10月25日11時30分：&#10;10月31日10時：&#10;11月23日11時：&#10;…"></textarea></label>
+        <p class="sub">美容院から届いた一覧をそのまま貼り付けてください。</p>
+        <label class="field"><textarea id="yearlyText" rows="6" placeholder="10月25日11時30分：&#10;10月31日10時：&#10;11月23日11時：&#10;…"></textarea></label>
         <div class="actions">
           <button class="btn secondary" id="btnSaveYearly">リストを保存</button>
-          <button class="btn secondary" id="btnClearYearly">リストを消して手入力に戻す</button>
         </div>
         <div class="toast" id="yearlyToast" aria-live="polite"></div>
         <ol class="datelist" id="dateList"></ol>
@@ -73,19 +68,13 @@
         <span class="name" id="nameA"></span>
         <span class="pill" id="pillA"></span>
         <a class="btn" id="linkA" href="#">Aさんの選択ページ</a>
-        <div class="mini">
-          <button class="btn secondary" id="lineA">LINE</button>
-          <button class="btn secondary" id="copyA">コピー</button>
-        </div>
+        <button class="btn secondary" id="copyA">リンクをコピー</button>
       </div>
       <div class="person">
         <span class="name" id="nameB"></span>
         <span class="pill" id="pillB"></span>
         <a class="btn" id="linkB" href="#">Bさんの選択ページ</a>
-        <div class="mini">
-          <button class="btn secondary" id="lineB">LINE</button>
-          <button class="btn secondary" id="copyB">コピー</button>
-        </div>
+        <button class="btn secondary" id="copyB">リンクをコピー</button>
       </div>
     </div>
     <div class="toast" id="linkToast" aria-live="polite"></div>
@@ -108,15 +97,12 @@
 
   <section class="card" id="tools" hidden>
     <div class="actions">
-      <button class="btn secondary" id="btnRefresh">最新に更新</button>
       <button class="btn secondary" id="btnReset">選択をリセット</button>
     </div>
     <p class="sub" id="resetConfirm" hidden>2人の選択を消します（候補日リストは残ります）。よろしければもう一度「選択をリセット」を押してください。</p>
-    <p class="meta" id="meta"></p>
     <p class="note err" id="err" hidden></p>
   </section>
 
-  <footer>静的ページ + 無料のデータ保存。<a id="bookmark" href="#">このURLをブックマーク</a></footer>
 </main>
 <script>
 (function () {
@@ -133,7 +119,6 @@
     if (!id && S.storeName() === 'firebase' && !$('dbUrl').value) $('dbUrl').value = S.dbUrl();
     ['dates', 'yearly', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
     if (!id) { show($('secR'), false); show($('waiting'), false); return; }
-    $('bookmark').href = location.href;
     $('linkA').href = S.pageUrl('ani.html', id);
     $('linkB').href = S.pageUrl('otouto.html', id);
     $('nameA').textContent = S.NAMES.a; $('nameB').textContent = S.NAMES.b;
@@ -162,7 +147,6 @@
       if (v.b === null) left.push(S.NAMES.b);
       $('waitMsg').textContent = left.join('と') + 'の選択待ちです。2人とも選ぶと、ここに結果が表示されます。';
     }
-    $('meta').textContent = (room.updated ? '最終更新: ' + S.fmtTime(room.updated) + ' ／ ' : '') + '保存先: ' + (S.storeName() === 'firebase' ? 'Firebase' : 'jsonblob');
   }
   function renderDateList(dates, next) {
     var ol = $('dateList'); ol.innerHTML = '';
@@ -208,19 +192,13 @@
       .then(function () { $('btnSaveDates').disabled = false; });
   });
   $('btnSaveYearly').addEventListener('click', function () {
-    var dates = S.parseDates($('yearlyText').value, $('startYear').value || new Date().getFullYear());
+    var dates = S.parseDatesAuto($('yearlyText').value);
     if (!dates.length) { toast('yearlyToast', '日付を読み取れませんでした。「10月25日11時30分」の形で貼り付けてください。'); return; }
     $('btnSaveYearly').disabled = true;
     S.updateRoom(id, { dates: dates, a: null, b: null, round: '' }).then(function (r) { room = r; $('yearlyText').value = ''; render(); toast('yearlyToast', dates.length + '件を保存しました。'); })
       .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); })
       .then(function () { $('btnSaveYearly').disabled = false; });
   });
-  $('btnClearYearly').addEventListener('click', function () {
-    S.updateRoom(id, { dates: [], a: null, b: null, round: '' }).then(function (r) { room = r; $('yearlyText').value = ''; render(); })
-      .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); });
-  });
-  $('startYear').value = new Date().getFullYear();
-  $('btnRefresh').addEventListener('click', refresh);
   $('btnReset').addEventListener('click', function () {
     if (!resetArmed) { resetArmed = true; show($('resetConfirm'), true); return; }
     resetArmed = false; show($('resetConfirm'), false);
@@ -232,16 +210,19 @@
   function inviteText(who, file) {
     return '【日程決め】\n' + (room ? '① ' + room.d1 + '\n② ' + room.d2 + '\n' : '') + who + 'の希望を選んでね↓\n' + S.pageUrl(file, id);
   }
+  function wireCopy(copyBtn, textFn, toastId) {
+    $(copyBtn).addEventListener('click', function () { S.copyText(textFn()).then(function () { toast(toastId, 'コピーしました。'); }); });
+  }
   function wireShare(lineBtn, copyBtn, textFn, toastId) {
     $(lineBtn).addEventListener('click', function () {
       var t = textFn();
       if (navigator.share) navigator.share({ text: t }).catch(function () {});
       else window.open(S.lineShareUrl(t), '_blank');
     });
-    $(copyBtn).addEventListener('click', function () { S.copyText(textFn()).then(function () { toast(toastId, 'コピーしました。'); }); });
+    wireCopy(copyBtn, textFn, toastId);
   }
-  wireShare('lineA', 'copyA', function () { return inviteText(S.NAMES.a, 'ani.html'); }, 'linkToast');
-  wireShare('lineB', 'copyB', function () { return inviteText(S.NAMES.b, 'otouto.html'); }, 'linkToast');
+  wireCopy('copyA', function () { return inviteText(S.NAMES.a, 'ani.html'); }, 'linkToast');
+  wireCopy('copyB', function () { return inviteText(S.NAMES.b, 'otouto.html'); }, 'linkToast');
   wireShare('btnLineResult', 'btnCopyResult', function () { return S.shareTextFor(room, S.decide(room)) + location.href; }, 'resultToast');
 
   // 自動更新: 20秒ごと、および画面に戻ったとき
