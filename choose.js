@@ -44,7 +44,6 @@
     show($('secR'), !!r);
     show($('waiting'), mine && !r);
     $('waitMsg').textContent = other + 'がまだ選んでいません。' + other + 'が選ぶと結果が出ます。';
-    $('meta').textContent = room.updated ? '最終更新: ' + S.fmtTime(room.updated) : '';
   }
   function choose(v) {
     var btns = document.querySelectorAll('.choice');
@@ -58,7 +57,6 @@
     S.loadRoom(id).then(function (r) { room = r; setErr(''); render(); })
       .catch(function (e) { setErr('読み込みに失敗しました。(' + e.message + ')'); });
   }
-  $('btnRefresh').addEventListener('click', refresh);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   if (id) setInterval(refresh, 20000);
   refresh();

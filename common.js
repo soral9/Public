@@ -45,6 +45,13 @@
     }
     return out.sort();
   }
+  // 年の自動判定: 今年として読み、最初の日付が半年以上前なら来年のリストとみなす
+  function parseDatesAuto(text, now) {
+    var y = new Date(now || Date.now()).getFullYear();
+    var d = parseDates(text, y);
+    if (d.length && parseIso(d[0]) < new Date((now || Date.now()) - 183 * 86400000)) d = parseDates(text, y + 1);
+    return d;
+  }
   var WEEK = ['日', '月', '火', '水', '木', '金', '土'];
   function parseIso(iso) {
     var p = iso.split(/[-T:]/).map(Number);
@@ -238,7 +245,7 @@
   window.Salon = {
     NAMES: NAMES, OPTIONS: OPTIONS, LABEL: LABEL, decide: decide, normalize: normalize,
     roomId: roomId, pageUrl: pageUrl, loadRoom: loadRoom, updateRoom: updateRoom, saveChoice: saveChoice, createRoom: createRoom,
-    view: view, parseDates: parseDates, fmtDate: fmtDate, upcoming: upcoming,
+    view: view, parseDates: parseDates, parseDatesAuto: parseDatesAuto, fmtDate: fmtDate, upcoming: upcoming,
     $: $, renderResultInto: renderResultInto, shareTextFor: shareTextFor, lineShareUrl: lineShareUrl,
     copyText: copyText, fmtTime: fmtTime, setDbUrl: setDbUrl, storeName: function () { return storeName; }, dbUrl: function () { return dbUrl; }
   };
