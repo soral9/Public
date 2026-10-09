@@ -24,7 +24,7 @@
 
 1. https://console.firebase.google.com を開き、Googleアカウントでログイン
 2. 「プロジェクトを作成」→ 名前は何でもよい（例: salon）→ Googleアナリティクスは「無効」でよい → 作成
-3. 左メニュー「構築」→「Realtime Database」→「データベースを作成」
+3. 左メニュー「Database と Storage」（古い画面では「構築」）→「Realtime Database」→「データベースを作成」
    - ロケーションはどれでもよい（例: Singapore / United States）
    - セキュリティルールは「ロックモード」のままで作成（次で書き換えます）
 4. 「ルール」タブを開き、内容を次に置き換えて「公開」
