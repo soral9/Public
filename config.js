@@ -7,5 +7,5 @@ window.SALON_CONFIG = {
   // Firebase を使わない場合の保存先 (jsonblob 互換API)。既定: https://jsonblob.com/api/jsonBlob
   jsonblobUrl: "",
   // 表示名
-  names: { a: "兄", b: "弟" }
+  names: { a: "Aさん", b: "Bさん" }
 };

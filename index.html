@@ -8,14 +8,13 @@
 <link rel="stylesheet" href="style.css">
 <script src="config.js"></script>
 <script src="common.js"></script>
-<title>美容院 日程きめ</title>
-<meta name="description" content="2つの候補日に対して兄と弟が5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
+<title>日程決め</title>
+<meta name="description" content="2つの候補日に対してAさんとBさんが5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
 </head>
 <body>
 <main>
   <header>
-    <h1>美容院 日程きめ</h1>
-    <p class="sub">候補日を2つ入れて、兄・弟がそれぞれのページで希望を選ぶと、ここに結果が出ます。</p>
+    <h1>日程決め</h1>
   </header>
 
   <section class="card" id="noRoom" hidden>
@@ -73,7 +72,7 @@
       <div class="person">
         <span class="name" id="nameA"></span>
         <span class="pill" id="pillA"></span>
-        <a class="btn" id="linkA" href="#">兄の選択ページ</a>
+        <a class="btn" id="linkA" href="#">Aさんの選択ページ</a>
         <div class="mini">
           <button class="btn secondary" id="lineA">LINE</button>
           <button class="btn secondary" id="copyA">コピー</button>
@@ -82,7 +81,7 @@
       <div class="person">
         <span class="name" id="nameB"></span>
         <span class="pill" id="pillB"></span>
-        <a class="btn" id="linkB" href="#">弟の選択ページ</a>
+        <a class="btn" id="linkB" href="#">Bさんの選択ページ</a>
         <div class="mini">
           <button class="btn secondary" id="lineB">LINE</button>
           <button class="btn secondary" id="copyB">コピー</button>
@@ -138,6 +137,7 @@
     $('linkA').href = S.pageUrl('ani.html', id);
     $('linkB').href = S.pageUrl('otouto.html', id);
     $('nameA').textContent = S.NAMES.a; $('nameB').textContent = S.NAMES.b;
+    $('linkA').textContent = S.NAMES.a + 'の選択ページ'; $('linkB').textContent = S.NAMES.b + 'の選択ページ';
     if (!room) return;
     var v = S.view(room);
     show($('autoDates'), v.auto); show($('manualDates'), !v.auto);
@@ -230,7 +230,7 @@
 
   function toast(elId, m) { $(elId).textContent = m; setTimeout(function () { $(elId).textContent = ''; }, 3000); }
   function inviteText(who, file) {
-    return '【美容院 日程きめ】\n' + (room ? '① ' + room.d1 + '\n② ' + room.d2 + '\n' : '') + who + 'の希望を選んでね↓\n' + S.pageUrl(file, id);
+    return '【日程決め】\n' + (room ? '① ' + room.d1 + '\n② ' + room.d2 + '\n' : '') + who + 'の希望を選んでね↓\n' + S.pageUrl(file, id);
   }
   function wireShare(lineBtn, copyBtn, textFn, toastId) {
     $(lineBtn).addEventListener('click', function () {
