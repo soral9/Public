@@ -19,10 +19,16 @@
   </header>
 
   <section class="card" id="noRoom" hidden>
-    <h2>はじめに</h2>
-    <p class="sub">共有用の「部屋」を1つ作ります。作ったあとのURLをブックマークして、弟にも送ってください。</p>
+    <h2>はじめに（1回だけ）</h2>
+    <p class="sub">2人の選択を共有するため、Googleの無料サービス Firebase にデータを置きます。<a href="https://github.com/soral9/Public#firebase-の準備5分" target="_blank" rel="noopener">準備手順</a>のとおりに作った Realtime Database のURLを貼り付けてください。</p>
+    <label class="field">Realtime Database のURL<input id="dbUrl" placeholder="https://xxxx-default-rtdb.firebaseio.com" inputmode="url" autocomplete="off"></label>
     <div class="actions"><button class="btn" id="btnCreate">部屋を作る</button></div>
     <p class="note err" id="createErr" hidden></p>
+    <details>
+      <summary class="sub">Firebase を使わずに試す</summary>
+      <p class="sub">サインアップ不要の jsonblob.com に保存します。サービス側の都合で失敗したり、30日でデータが消えたりすることがあります。</p>
+      <div class="actions"><button class="btn secondary" id="btnCreateBlob">jsonblob で部屋を作る</button></div>
+    </details>
   </section>
 
   <section class="card" id="dates" hidden>
@@ -85,7 +91,7 @@
     <p class="note err" id="err" hidden></p>
   </section>
 
-  <footer>静的ページ + 無料のJSON保存。<a id="bookmark" href="#">このURLをブックマーク</a></footer>
+  <footer>静的ページ + 無料のデータ保存。<a id="bookmark" href="#">このURLをブックマーク</a></footer>
 </main>
 <script>
 (function () {
@@ -99,6 +105,7 @@
 
   function render() {
     show($('noRoom'), !id);
+    if (!id && S.storeName() === 'firebase' && !$('dbUrl').value) $('dbUrl').value = S.dbUrl();
     ['dates', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
     if (!id) { show($('secR'), false); show($('waiting'), false); return; }
     $('bookmark').href = location.href;
@@ -117,7 +124,7 @@
       if (room.b === null) left.push(S.NAMES.b);
       $('waitMsg').textContent = left.join('と') + 'の選択待ちです。2人とも選ぶと、ここに結果が表示されます。';
     }
-    $('meta').textContent = room.updated ? '最終更新: ' + S.fmtTime(room.updated) : '';
+    $('meta').textContent = (room.updated ? '最終更新: ' + S.fmtTime(room.updated) + ' ／ ' : '') + '保存先: ' + (S.storeName() === 'firebase' ? 'Firebase' : 'jsonblob');
   }
   function setPill(el, done) { el.textContent = done ? '選択済み' : '未回答'; el.className = 'pill ' + (done ? 'done' : 'todo'); }
 
@@ -127,16 +134,24 @@
       .catch(function (e) { setErr('読み込みに失敗しました。部屋が見つからないか、通信エラーです。(' + e.message + ')'); });
   }
 
-  $('btnCreate').addEventListener('click', function () {
-    $('btnCreate').disabled = true;
+  function create(btn) {
+    btn.disabled = true; show($('createErr'), false);
     S.createRoom().then(function (newId) {
       location.replace(S.pageUrl('index.html', newId));
     }).catch(function (e) {
-      $('btnCreate').disabled = false;
-      $('createErr').textContent = '部屋を作れませんでした。通信環境を確認してください。(' + e.message + ')';
+      btn.disabled = false;
+      $('createErr').textContent = '部屋を作れませんでした。URLとデータベースのルール、通信環境を確認してください。(' + e.message + ')';
       show($('createErr'), true);
     });
+  }
+  $('btnCreate').addEventListener('click', function () {
+    if (!S.setDbUrl($('dbUrl').value)) {
+      $('createErr').textContent = 'URLの形式が違います。https://～.firebaseio.com または https://～.firebasedatabase.app の形で貼り付けてください。';
+      show($('createErr'), true); return;
+    }
+    create($('btnCreate'));
   });
+  $('btnCreateBlob').addEventListener('click', function () { create($('btnCreateBlob')); });
   $('btnSaveDates').addEventListener('click', function () {
     var d1 = $('d1').value.trim(), d2 = $('d2').value.trim();
     $('btnSaveDates').disabled = true;
