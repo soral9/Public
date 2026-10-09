@@ -3,378 +3,177 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>美容院 日程きめ</title>
-<meta name="description" content="2つの候補日に対して2人が5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
-<style>
-/* Layout: one narrow column (phone first). Setup → 自分の選択 → 弟の選択 → 結果 の順に縦に流れる。 */
-:root {
-  --bg: #f2f4f6;
-  --panel: #ffffff;
-  --fg: #1c2229;
-  --muted: #5f6b78;
-  --line: #d6dce3;
-  --accent: #2b5f8a;      /* ① の色 */
-  --accent2: #8a3f5c;     /* ② の色 */
-  --neutral: #6b7280;     /* どっちでもいい */
-  --ok-bg: #e6f2ec; --ok-fg: #1f5a3a;
-  --warn-bg: #fbeedd; --warn-fg: #7a4a0d;
-  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
-  --font-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #14191f; --panel: #1e252d; --fg: #e8ecf0; --muted: #9aa6b2; --line: #343e49;
-    --accent: #7fb3dc; --accent2: #d78ab0; --neutral: #a0a8b3;
-    --ok-bg: #1d3a2b; --ok-fg: #a9dcc0; --warn-bg: #43311a; --warn-fg: #f1cf9a;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #14191f; --panel: #1e252d; --fg: #e8ecf0; --muted: #9aa6b2; --line: #343e49;
-  --accent: #7fb3dc; --accent2: #d78ab0; --neutral: #a0a8b3;
-  --ok-bg: #1d3a2b; --ok-fg: #a9dcc0; --warn-bg: #43311a; --warn-fg: #f1cf9a;
-  color-scheme: dark;
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; }
-body {
-  background: var(--bg); color: var(--fg);
-  font-family: var(--font-body); font-size: 16px; line-height: 1.7;
-  padding-inline: 16px; padding-block: 24px 48px;
-}
-main { max-width: 560px; margin: 0 auto; display: grid; gap: 20px; }
-h1 {
-  font-family: var(--font-display); font-weight: 700; font-size: 1.6rem;
-  margin: 0; line-height: 1.3; text-wrap: balance;
-}
-.sub { color: var(--muted); margin: 4px 0 0; font-size: .95rem; }
-section.card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 18px; display: grid; gap: 14px;
-}
-h2 { font-size: 1.05rem; margin: 0; font-weight: 700; }
-.eyebrow { font-size: .75rem; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
-label.field { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
-label.field input {
-  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
-  border-radius: 8px; padding: 10px 12px; width: 100%;
-}
-label.field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 420px) { .row2 { grid-template-columns: 1fr; } }
-.tag { display: inline-block; font-weight: 700; padding: 0 .4em; border-radius: 6px; color: #fff; }
-.tag.d1 { background: var(--accent); } .tag.d2 { background: var(--accent2); }
-
-.choices { display: grid; gap: 8px; }
-.choice {
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
-  width: 100%; text-align: left; font: inherit; color: var(--fg);
-  background: var(--bg); border: 2px solid var(--line); border-radius: 10px;
-  padding: 10px 14px; cursor: pointer;
-}
-.choice small { color: var(--muted); font-size: .8rem; }
-.choice:hover { border-color: var(--muted); }
-.choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.choice[aria-pressed="true"] { border-color: var(--fg); background: var(--panel); font-weight: 700; }
-.choice[data-v="-2"], .choice[data-v="-1"] { border-left: 6px solid var(--accent); }
-.choice[data-v="2"], .choice[data-v="1"] { border-left: 6px solid var(--accent2); }
-.choice[data-v="0"] { border-left: 6px solid var(--neutral); }
-
-.actions { display: flex; flex-wrap: wrap; gap: 10px; }
-button.btn {
-  font: inherit; font-weight: 700; border-radius: 999px; padding: 12px 20px; cursor: pointer;
-  border: 1px solid var(--fg); background: var(--fg); color: var(--bg); flex: 1 1 auto;
-}
-button.btn.secondary { background: transparent; color: var(--fg); }
-button.btn.line { background: #06C755; border-color: #06C755; color: #fff; }
-button.btn:disabled { opacity: .45; cursor: not-allowed; }
-button.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.result { display: grid; gap: 12px; }
-.assign { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 420px) { .assign { grid-template-columns: 1fr; } }
-.assign div { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 2px; }
-.assign .tag { justify-self: start; }
-.assign .who { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; }
-.assign .when { color: var(--muted); font-size: .9rem; }
-.note { border-radius: 8px; padding: 10px 12px; font-size: .92rem; }
-.note.ok { background: var(--ok-bg); color: var(--ok-fg); }
-.note.warn { background: var(--warn-bg); color: var(--warn-fg); }
-.votes { font-size: .9rem; color: var(--muted); }
-.votes b { color: var(--fg); }
-.toast { font-size: .85rem; color: var(--muted); min-height: 1.4em; }
-details { font-size: .9rem; color: var(--muted); }
-summary { cursor: pointer; }
-.hist { margin: 8px 0 0; padding-left: 1.2em; }
-footer { color: var(--muted); font-size: .8rem; text-align: center; }
-</style>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<title>美容院 日程きめ</title>
+<meta name="description" content="2つの候補日に対して兄と弟が5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
 </head>
 <body>
-<main id="app">
+<main>
   <header>
     <h1>美容院 日程きめ</h1>
-    <p class="sub">候補日を2つ出して、それぞれが5段階で希望を選ぶと、どちらが①・②に行くか自動で決まります。</p>
+    <p class="sub">候補日を2つ入れて、兄・弟がそれぞれのページで希望を選ぶと、ここに結果が出ます。</p>
   </header>
 
-  <!-- 候補日・名前 -->
-  <section class="card" id="setup">
-    <span class="eyebrow">Step 1 候補日</span>
+  <section class="card" id="noRoom" hidden>
+    <h2>はじめに</h2>
+    <p class="sub">共有用の「部屋」を1つ作ります。作ったあとのURLをブックマークして、弟にも送ってください。</p>
+    <div class="actions"><button class="btn" id="btnCreate">部屋を作る</button></div>
+    <p class="note err" id="createErr" hidden></p>
+  </section>
+
+  <section class="card" id="dates" hidden>
+    <span class="eyebrow">候補日</span>
     <div class="row2">
       <label class="field"><span><span class="tag d1">①</span> 候補日①</span><input id="d1" placeholder="例: 11/8(土) 14:00"></label>
       <label class="field"><span><span class="tag d2">②</span> 候補日②</span><input id="d2" placeholder="例: 11/15(土) 11:00"></label>
     </div>
-    <div class="row2">
-      <label class="field">自分の名前<input id="na" value="自分"></label>
-      <label class="field">相手の名前<input id="nb" value="弟"></label>
+    <div class="actions"><button class="btn secondary" id="btnSaveDates">候補日を保存</button></div>
+    <div class="toast" id="dateToast" aria-live="polite"></div>
+  </section>
+
+  <section class="card" id="people" hidden>
+    <span class="eyebrow">選択ページ</span>
+    <div class="status">
+      <div class="person">
+        <span class="name" id="nameA"></span>
+        <span class="pill" id="pillA"></span>
+        <a class="btn" id="linkA" href="#">兄の選択ページ</a>
+        <div class="mini">
+          <button class="btn secondary" id="lineA">LINE</button>
+          <button class="btn secondary" id="copyA">コピー</button>
+        </div>
+      </div>
+      <div class="person">
+        <span class="name" id="nameB"></span>
+        <span class="pill" id="pillB"></span>
+        <a class="btn" id="linkB" href="#">弟の選択ページ</a>
+        <div class="mini">
+          <button class="btn secondary" id="lineB">LINE</button>
+          <button class="btn secondary" id="copyB">コピー</button>
+        </div>
+      </div>
     </div>
+    <div class="toast" id="linkToast" aria-live="polite"></div>
   </section>
 
-  <!-- A の選択 -->
-  <section class="card" id="secA">
-    <span class="eyebrow">Step 2</span>
-    <h2 id="hA">自分 の希望</h2>
-    <div class="choices" id="chA"></div>
-  </section>
-
-  <!-- B の選択 -->
-  <section class="card" id="secB">
-    <span class="eyebrow">Step 3</span>
-    <h2 id="hB">弟 の希望</h2>
-    <p class="sub" id="hintB">相手の選択は結果が出るまで表示されません。</p>
-    <div class="choices" id="chB"></div>
-  </section>
-
-  <!-- 結果 -->
   <section class="card" id="secR" hidden>
-    <span class="eyebrow">結果</span>
+    <span class="eyebrow">現在の結果</span>
     <div class="result" id="result"></div>
-  </section>
-
-  <!-- 共有 -->
-  <section class="card" id="share">
-    <h2 id="shareTitle">相手に送る</h2>
-    <p class="sub" id="shareHint"></p>
     <div class="actions">
-      <button class="btn line" id="btnLine">LINEで送る</button>
-      <button class="btn secondary" id="btnCopy">リンクをコピー</button>
-      <button class="btn secondary" id="btnReset">新しく作る</button>
+      <button class="btn line" id="btnLineResult">結果をLINEで送る</button>
+      <button class="btn secondary" id="btnCopyResult">結果をコピー</button>
     </div>
-    <div class="toast" id="toast" aria-live="polite"></div>
+    <div class="toast" id="resultToast" aria-live="polite"></div>
   </section>
 
-  <details id="histBox" hidden>
-    <summary>この端末での過去の結果</summary>
-    <ul class="hist" id="hist"></ul>
-  </details>
+  <section class="card" id="waiting" hidden>
+    <span class="eyebrow">現在の結果</span>
+    <p class="sub" id="waitMsg"></p>
+  </section>
 
-  <footer>静的ページ。サーバー不要・無料。状態はリンクの中に入っています。</footer>
+  <section class="card" id="tools" hidden>
+    <div class="actions">
+      <button class="btn secondary" id="btnRefresh">最新に更新</button>
+      <button class="btn secondary" id="btnReset">来月用にリセット</button>
+    </div>
+    <p class="sub" id="resetConfirm" hidden>2人の選択と候補日を消します。よろしければもう一度「来月用にリセット」を押してください。</p>
+    <p class="meta" id="meta"></p>
+    <p class="note err" id="err" hidden></p>
+  </section>
+
+  <footer>静的ページ + 無料のJSON保存。<a id="bookmark" href="#">このURLをブックマーク</a></footer>
 </main>
-
 <script>
 (function () {
   'use strict';
-  var OPTIONS = [
-    { v: -2, label: '絶対①', sub: '①じゃないと無理' },
-    { v: -1, label: '①',     sub: '①がいい' },
-    { v:  0, label: 'どっちでもいい', sub: '相手に合わせる' },
-    { v:  1, label: '②',     sub: '②がいい' },
-    { v:  2, label: '絶対②', sub: '②じゃないと無理' }
-  ];
-  var LABEL = {}; OPTIONS.forEach(function (o) { LABEL[o.v] = o.label; });
+  var S = window.Salon, $ = S.$;
+  var id = S.roomId();
+  var room = null, timer = null, resetArmed = false;
 
-  // ---- 状態 ----
-  var state = { d1: '', d2: '', na: '自分', nb: '弟', a: null, b: null };
-
-  function encode(s) { return btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/=+$/, ''); }
-  function decode(t) {
-    try { return JSON.parse(decodeURIComponent(escape(atob(t)))); } catch (e) { return null; }
-  }
-  function buildUrl() {
-    var u = new URL(location.href); u.search = ''; u.hash = '';
-    return u.toString() + '?s=' + encode(state);
-  }
-
-  // ---- 判定ロジック ----
-  // 点数: 絶対①=-2, ①=-1, どっちでも=0, ②=+1, 絶対②=+2
-  // diff = b - a。 正なら A→①/B→②、負なら A→②/B→①、0なら決定不能(コイン)。
-  function hash(str) {
-    var h = 2166136261;
-    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-    return h;
-  }
-  function decide(s) {
-    if (s.a === null || s.b === null) return null;
-    var diff = s.b - s.a;
-    var r = { aTo: 1, tie: false, conflict: false, reason: '' };
-    if (diff > 0) r.aTo = 1;
-    else if (diff < 0) r.aTo = 2;
-    else {
-      r.tie = true;
-      r.aTo = (hash(s.d1 + '|' + s.d2 + '|' + s.na + '|' + s.nb) % 2 === 0) ? 1 : 2;
-      if (s.a === 0 && s.b === 0) r.reason = '2人とも「どっちでもいい」なので、コイントスで決めました。';
-      else if (Math.abs(s.a) === 2) { r.conflict = true; r.reason = '2人とも「' + LABEL[s.a] + '」で完全に競合しています。暫定でコイントスの結果を出しましたが、相談して決めてください。'; }
-      else r.reason = '2人とも「' + LABEL[s.a] + '」で希望が同じなので、コイントスで決めました。';
-    }
-    if (!r.tie) {
-      var sa = Math.abs(s.a), sb = Math.abs(s.b);
-      var aGot = (s.a < 0 && r.aTo === 1) || (s.a > 0 && r.aTo === 2) || s.a === 0;
-      var bGot = (s.b < 0 && r.aTo === 2) || (s.b > 0 && r.aTo === 1) || s.b === 0;
-      if (aGot && bGot) r.reason = '2人の希望どおりに決まりました。';
-      else if (!aGot) r.reason = s.na + 'は「' + LABEL[s.a] + '」でしたが、' + s.nb + 'の希望の方が強い(' + LABEL[s.b] + ')ので譲る形になりました。';
-      else if (!bGot) r.reason = s.nb + 'は「' + LABEL[s.b] + '」でしたが、' + s.na + 'の希望の方が強い(' + LABEL[s.a] + ')ので譲る形になりました。';
-      if (sa === 2 && sb === 2 && !(aGot && bGot)) r.conflict = true;
-    }
-    return r;
-  }
-  window.__decide = decide; // テスト用
-
-  // ---- 描画 ----
-  var $ = function (id) { return document.getElementById(id); };
-  var phase = 'A'; // A: 自分が選ぶ, B: 相手が選ぶ, R: 結果
-
-  function renderChoices(container, key) {
-    container.innerHTML = '';
-    OPTIONS.forEach(function (o) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'choice'; b.dataset.v = o.v;
-      b.setAttribute('aria-pressed', state[key] === o.v ? 'true' : 'false');
-      b.innerHTML = '<span>' + o.label + '</span><small>' + o.sub + '</small>';
-      b.addEventListener('click', function () { state[key] = o.v; render(); });
-      container.appendChild(b);
-    });
-  }
-
-  function dateText(n) { return (n === 1 ? state.d1 : state.d2) || '(未入力)'; }
-
-  function renderResult() {
-    var r = decide(state);
-    var box = $('result'); box.innerHTML = '';
-    if (!r) return;
-    var aDay = r.aTo, bDay = r.aTo === 1 ? 2 : 1;
-    var assign = document.createElement('div'); assign.className = 'assign';
-    [[state.na, aDay], [state.nb, bDay]].sort(function (x, y) { return x[1] - y[1]; }).forEach(function (p) {
-      var d = document.createElement('div');
-      d.innerHTML = '<span class="tag ' + (p[1] === 1 ? 'd1' : 'd2') + '">' + (p[1] === 1 ? '①' : '②') + '</span>'
-        + '<span class="who"></span><span class="when"></span>';
-      d.querySelector('.who').textContent = p[0];
-      d.querySelector('.when').textContent = dateText(p[1]);
-      assign.appendChild(d);
-    });
-    box.appendChild(assign);
-    var note = document.createElement('p');
-    note.className = 'note ' + (r.conflict ? 'warn' : 'ok'); note.textContent = r.reason;
-    box.appendChild(note);
-    var votes = document.createElement('p'); votes.className = 'votes';
-    votes.innerHTML = '選択: <b></b> = ' + LABEL[state.a] + ' / <b></b> = ' + LABEL[state.b];
-    votes.querySelectorAll('b')[0].textContent = state.na;
-    votes.querySelectorAll('b')[1].textContent = state.nb;
-    box.appendChild(votes);
-    saveHistory(r);
-  }
+  function show(el, on) { el.hidden = !on; }
+  function setErr(msg) { $('err').textContent = msg || ''; show($('err'), !!msg); }
 
   function render() {
-    phase = (state.a !== null && state.b !== null) ? 'R' : (state.a !== null ? 'B' : 'A');
-    var locked = phase !== 'A';
-    ['d1', 'd2', 'na', 'nb'].forEach(function (k) { $(k).value = state[k]; $(k).readOnly = locked; });
-    $('hA').textContent = state.na + ' の希望';
-    $('hB').textContent = state.nb + ' の希望';
-
-    $('secA').hidden = phase === 'B';
-    $('secB').hidden = phase === 'A';
-    $('secR').hidden = phase !== 'R';
-    renderChoices($('chA'), 'a');
-    renderChoices($('chB'), 'b');
-    if (phase === 'R') { renderResult(); $('hintB').hidden = true; } else { $('hintB').hidden = false; }
-
-    var can = state.d1 && state.d2 && (phase === 'A' ? state.a !== null : true);
-    $('btnLine').disabled = !can; $('btnCopy').disabled = !can;
-    if (phase === 'A') {
-      $('shareTitle').textContent = state.nb + ' に送る';
-      $('shareHint').textContent = '候補日と自分の希望を選んでから送ってください。相手には自分の選択は見えません。';
-    } else if (phase === 'B') {
-      $('shareTitle').textContent = state.na + ' に結果を返す';
-      $('shareHint').textContent = '希望を選ぶと結果が出ます。結果のリンクを送り返してください。';
-    } else {
-      $('shareTitle').textContent = '結果を共有';
-      $('shareHint').textContent = 'このリンクを開けば同じ結果が見られます。';
+    show($('noRoom'), !id);
+    ['dates', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
+    if (!id) { show($('secR'), false); show($('waiting'), false); return; }
+    $('bookmark').href = location.href;
+    $('linkA').href = S.pageUrl('ani.html', id);
+    $('linkB').href = S.pageUrl('otouto.html', id);
+    $('nameA').textContent = S.NAMES.a; $('nameB').textContent = S.NAMES.b;
+    if (!room) return;
+    if (document.activeElement !== $('d1')) $('d1').value = room.d1;
+    if (document.activeElement !== $('d2')) $('d2').value = room.d2;
+    setPill($('pillA'), room.a !== null); setPill($('pillB'), room.b !== null);
+    var r = S.renderResultInto($('result'), room);
+    show($('secR'), !!r); show($('waiting'), !r);
+    if (!r) {
+      var left = [];
+      if (room.a === null) left.push(S.NAMES.a);
+      if (room.b === null) left.push(S.NAMES.b);
+      $('waitMsg').textContent = left.join('と') + 'の選択待ちです。2人とも選ぶと、ここに結果が表示されます。';
     }
+    $('meta').textContent = room.updated ? '最終更新: ' + S.fmtTime(room.updated) : '';
+  }
+  function setPill(el, done) { el.textContent = done ? '選択済み' : '未回答'; el.className = 'pill ' + (done ? 'done' : 'todo'); }
+
+  function refresh() {
+    if (!id) return Promise.resolve();
+    return S.loadRoom(id).then(function (r) { room = r; setErr(''); render(); })
+      .catch(function (e) { setErr('読み込みに失敗しました。部屋が見つからないか、通信エラーです。(' + e.message + ')'); });
   }
 
-  // ---- 共有 ----
-  function shareText() {
-    var r = decide(state);
-    if (r) {
-      var a1 = r.aTo === 1 ? state.na : state.nb, a2 = r.aTo === 1 ? state.nb : state.na;
-      return '【美容院 結果】\n① ' + state.d1 + ' → ' + a1 + '\n② ' + state.d2 + ' → ' + a2 + '\n';
-    }
-    return '【美容院 日程きめ】\n① ' + state.d1 + '\n② ' + state.d2 + '\n' + state.nb + 'の希望を選んでね↓\n';
-  }
-  function showToast(m) { $('toast').textContent = m; setTimeout(function () { $('toast').textContent = ''; }, 3000); }
-
-  $('btnLine').addEventListener('click', function () {
-    var url = buildUrl(); history.replaceState(null, '', url);
-    var text = shareText() + url;
-    if (navigator.share) {
-      navigator.share({ text: text }).catch(function () {});
-    } else {
-      window.open('https://line.me/R/share?text=' + encodeURIComponent(text), '_blank');
-    }
-  });
-  $('btnCopy').addEventListener('click', function () {
-    var url = buildUrl(); history.replaceState(null, '', url);
-    var text = shareText() + url;
-    var done = function () { showToast('コピーしました。LINEに貼り付けて送ってください。'); };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
-    } else { fallbackCopy(text); done(); }
-  });
-  function fallbackCopy(t) {
-    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
-    ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
-  }
-  $('btnReset').addEventListener('click', function () {
-    var na = state.na, nb = state.nb;
-    state = { d1: '', d2: '', na: na, nb: nb, a: null, b: null };
-    history.replaceState(null, '', location.pathname);
-    render();
-  });
-  ['d1', 'd2', 'na', 'nb'].forEach(function (k) {
-    $(k).addEventListener('input', function () { state[k] = $(k).value.trim(); render(); $(k).focus(); });
-  });
-
-  // ---- 履歴 (この端末のみ) ----
-  function saveHistory(r) {
-    try {
-      var key = 'salon-history', list = JSON.parse(localStorage.getItem(key) || '[]');
-      var id = encode({ d1: state.d1, d2: state.d2, a: state.a, b: state.b });
-      if (list.some(function (x) { return x.id === id; })) return renderHistory(list);
-      list.unshift({ id: id, d1: state.d1, d2: state.d2, p1: r.aTo === 1 ? state.na : state.nb, p2: r.aTo === 1 ? state.nb : state.na });
-      list = list.slice(0, 12); localStorage.setItem(key, JSON.stringify(list)); renderHistory(list);
-    } catch (e) {}
-  }
-  function renderHistory(list) {
-    if (!list) { try { list = JSON.parse(localStorage.getItem('salon-history') || '[]'); } catch (e) { list = []; } }
-    $('histBox').hidden = list.length === 0;
-    $('hist').innerHTML = '';
-    list.forEach(function (x) {
-      var li = document.createElement('li'); li.textContent = '① ' + x.d1 + ' → ' + x.p1 + ' ／ ② ' + x.d2 + ' → ' + x.p2;
-      $('hist').appendChild(li);
+  $('btnCreate').addEventListener('click', function () {
+    $('btnCreate').disabled = true;
+    S.createRoom().then(function (newId) {
+      location.replace(S.pageUrl('index.html', newId));
+    }).catch(function (e) {
+      $('btnCreate').disabled = false;
+      $('createErr').textContent = '部屋を作れませんでした。通信環境を確認してください。(' + e.message + ')';
+      show($('createErr'), true);
     });
-  }
+  });
+  $('btnSaveDates').addEventListener('click', function () {
+    var d1 = $('d1').value.trim(), d2 = $('d2').value.trim();
+    $('btnSaveDates').disabled = true;
+    S.updateRoom(id, { d1: d1, d2: d2 }).then(function (r) { room = r; render(); toast('dateToast', '保存しました。'); })
+      .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); })
+      .then(function () { $('btnSaveDates').disabled = false; });
+  });
+  $('btnRefresh').addEventListener('click', refresh);
+  $('btnReset').addEventListener('click', function () {
+    if (!resetArmed) { resetArmed = true; show($('resetConfirm'), true); return; }
+    resetArmed = false; show($('resetConfirm'), false);
+    S.updateRoom(id, { d1: '', d2: '', a: null, b: null }).then(function (r) { room = r; render(); })
+      .catch(function (e) { setErr('リセットに失敗しました。(' + e.message + ')'); });
+  });
 
-  // ---- 起動 ----
-  var q = new URLSearchParams(location.search).get('s');
-  var loaded = q && decode(q);
-  if (loaded && typeof loaded === 'object') {
-    state.d1 = String(loaded.d1 || ''); state.d2 = String(loaded.d2 || '');
-    state.na = String(loaded.na || '自分'); state.nb = String(loaded.nb || '弟');
-    state.a = OPTIONS.some(function (o) { return o.v === loaded.a; }) ? loaded.a : null;
-    state.b = OPTIONS.some(function (o) { return o.v === loaded.b; }) ? loaded.b : null;
+  function toast(elId, m) { $(elId).textContent = m; setTimeout(function () { $(elId).textContent = ''; }, 3000); }
+  function inviteText(who, file) {
+    return '【美容院 日程きめ】\n' + (room ? '① ' + room.d1 + '\n② ' + room.d2 + '\n' : '') + who + 'の希望を選んでね↓\n' + S.pageUrl(file, id);
   }
-  renderHistory();
+  function wireShare(lineBtn, copyBtn, textFn, toastId) {
+    $(lineBtn).addEventListener('click', function () {
+      var t = textFn();
+      if (navigator.share) navigator.share({ text: t }).catch(function () {});
+      else window.open(S.lineShareUrl(t), '_blank');
+    });
+    $(copyBtn).addEventListener('click', function () { S.copyText(textFn()).then(function () { toast(toastId, 'コピーしました。'); }); });
+  }
+  wireShare('lineA', 'copyA', function () { return inviteText(S.NAMES.a, 'ani.html'); }, 'linkToast');
+  wireShare('lineB', 'copyB', function () { return inviteText(S.NAMES.b, 'otouto.html'); }, 'linkToast');
+  wireShare('btnLineResult', 'btnCopyResult', function () { return S.shareTextFor(room, S.decide(room)) + location.href; }, 'resultToast');
+
+  // 自動更新: 20秒ごと、および画面に戻ったとき
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+  if (id) timer = setInterval(refresh, 20000);
+
   render();
+  refresh();
 })();
 </script>
 </body>
