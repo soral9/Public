@@ -10,21 +10,46 @@
 | `index.html` | トップ。候補日の入力、兄・弟の選択ページへのリンク、現在の結果 |
 | `ani.html` | 兄の選択ページ（5択を押すだけ） |
 | `otouto.html` | 弟の選択ページ（5択を押すだけ） |
-| `config.js` | 保存先と表示名の設定 |
+| `config.js` | 保存先と表示名の設定（任意） |
 | `common.js` / `choose.js` / `style.css` | 共通ロジック・UI |
 
 3ページは `?r=部屋ID` で同じ「部屋」を共有します。部屋はトップページで1回だけ作ります。
 
 ## 保存先（無料）
 
-2人の選択を共有するため、小さなJSONを外部に保存します。`config.js` で切り替えます。
+2人の選択を共有するため、小さなJSONを外部に保存します。Googleの **Firebase Realtime Database**（無料の Spark プラン）を使います。
+クレジットカード登録は不要で、この用途なら無料枠を使い切ることはありません。
 
-- **jsonblob**（既定）: サインアップ不要。トップページの「部屋を作る」を押すだけで使えます。
-  30日以上アクセスがないと保存データが消えることがあります。その場合は「部屋を作る」からやり直してください。
-- **firebase**: Google の Firebase Realtime Database（無料の Spark プラン）。消えません。
-  1. Firebase でプロジェクトを作り、Realtime Database を作成
-  2. ルールを `{"rules": {"rooms": {".read": true, ".write": true}}}` にする
-  3. `config.js` を `store: "firebase"`、`firebaseUrl: "https://xxxx-default-rtdb.firebaseio.com"` にする
+### Firebase の準備（5分）
+
+1. https://console.firebase.google.com を開き、Googleアカウントでログイン
+2. 「プロジェクトを作成」→ 名前は何でもよい（例: salon）→ Googleアナリティクスは「無効」でよい → 作成
+3. 左メニュー「構築」→「Realtime Database」→「データベースを作成」
+   - ロケーションはどれでもよい（例: Singapore / United States）
+   - セキュリティルールは「ロックモード」のままで作成（次で書き換えます）
+4. 「ルール」タブを開き、内容を次に置き換えて「公開」
+
+   ```json
+   {
+     "rules": {
+       "rooms": { ".read": true, ".write": true }
+     }
+   }
+   ```
+
+5. 「データ」タブの上部に表示されるURLをコピー
+   - `https://xxxx-default-rtdb.firebaseio.com` または `https://xxxx-default-rtdb.asia-southeast1.firebasedatabase.app` の形
+6. トップページ（index.html）を開き、このURLを貼り付けて「部屋を作る」
+
+URLは作られたリンクに含まれるので、弟はリンクを開くだけで同じデータベースを使えます。
+`config.js` の `firebaseUrl` に書いておくと、貼り付けもリンクへの埋め込みも不要になります。
+
+ルールは「URLを知っている人なら誰でも読み書きできる」設定です。保存されるのは候補日と5択の結果だけなので、この用途では問題ありません。
+
+### Firebase を使わない場合
+
+トップページの「Firebase を使わずに試す」から、サインアップ不要の jsonblob.com に保存できます。
+ただし、サービス側の都合でつながらないことがあり、30日以上アクセスがないとデータが消えます。
 
 ## 公開手順（GitHub Pages、無料）
 

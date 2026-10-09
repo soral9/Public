@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   var CFG = window.SALON_CONFIG || {};
+  CFG.firebaseUrlFixed = String(CFG.firebaseUrl || '').trim();
   var NAMES = CFG.names || { a: '兄', b: '弟' };
 
   var OPTIONS = [
@@ -97,11 +98,31 @@
       }
     }
   };
-  var store = stores[CFG.store] || stores.jsonblob;
-
-  function roomId() { return new URLSearchParams(location.search).get('r') || ''; }
+  // 保存先の決定: config.js の firebaseUrl > リンクの ?db= > この端末に保存したURL > jsonblob
+  var params = new URLSearchParams(location.search);
+  var dbFromLink = params.get('db') || '';
+  var dbSaved = ''; try { dbSaved = localStorage.getItem('salon-db') || ''; } catch (e) {}
+  var dbUrl = String(CFG.firebaseUrl || '').trim() || dbFromLink || dbSaved;
+  if (dbFromLink) { try { localStorage.setItem('salon-db', dbFromLink); } catch (e) {} }
+  if (CFG.jsonblobUrl) stores.jsonblob.base = String(CFG.jsonblobUrl).replace(/\/+$/, '');
+  var store;
+  if (dbUrl) { store = stores.firebase; CFG.firebaseUrl = dbUrl; }
+  else store = stores.jsonblob;
+  var storeName = dbUrl ? 'firebase' : 'jsonblob';
+  function setDbUrl(url) {
+    url = String(url || '').trim().replace(/\/+$/, '');
+    if (!/^https:\/\/[a-z0-9-]+\.(firebaseio\.com|[a-z0-9-]+\.firebasedatabase\.app)$/.test(url)) return false;
+    try { localStorage.setItem('salon-db', url); } catch (e) {}
+    CFG.firebaseUrl = url; dbUrl = url; store = stores.firebase; storeName = 'firebase';
+    return true;
+  }
+  function roomId() { return params.get('r') || ''; }
   function pageUrl(file, id) {
-    var u = new URL(file, location.href); u.search = '?r=' + encodeURIComponent(id); u.hash = '';
+    var u = new URL(file, location.href); u.hash = '';
+    var q = '?r=' + encodeURIComponent(id);
+    // config.js に書いていないときだけ、リンクでDBのURLを引き継ぐ
+    if (dbUrl && !CFG.firebaseUrlFixed) q += '&db=' + encodeURIComponent(dbUrl);
+    u.search = q;
     return u.toString();
   }
   function loadRoom(id) { return store.load(id).then(normalize); }
@@ -159,6 +180,6 @@
     NAMES: NAMES, OPTIONS: OPTIONS, LABEL: LABEL, decide: decide, normalize: normalize,
     roomId: roomId, pageUrl: pageUrl, loadRoom: loadRoom, updateRoom: updateRoom, createRoom: createRoom,
     $: $, renderResultInto: renderResultInto, shareTextFor: shareTextFor, lineShareUrl: lineShareUrl,
-    copyText: copyText, fmtTime: fmtTime
+    copyText: copyText, fmtTime: fmtTime, setDbUrl: setDbUrl, storeName: function () { return storeName; }, dbUrl: function () { return dbUrl; }
   };
 })();
