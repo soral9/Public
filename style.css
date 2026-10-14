@@ -7,8 +7,8 @@
   --ok-bg: #e6f2ec; --ok-fg: #1f5a3a;
   --warn-bg: #fbeedd; --warn-fg: #7a4a0d;
   --err-bg: #f9e3e3; --err-fg: #7a1d1d;
-  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
-  --font-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  --font-display: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "BIZ UDPMincho", serif;
+  --font-body: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
