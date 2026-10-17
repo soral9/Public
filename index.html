@@ -117,8 +117,8 @@
     if (!id && S.storeName() === 'firebase' && !$('dbUrl').value) $('dbUrl').value = S.dbUrl();
     ['dates', 'yearly', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
     if (!id) { show($('secR'), false); show($('waiting'), false); return; }
-    $('linkA').href = S.pageUrl('ani.html', id);
-    $('linkB').href = S.pageUrl('otouto.html', id);
+    $('linkA').href = S.pageUrl('a.html', id);
+    $('linkB').href = S.pageUrl('b.html', id);
     $('nameA').textContent = S.NAMES.a; $('nameB').textContent = S.NAMES.b;
     $('linkA').textContent = S.NAMES.a + 'の選択ページ'; $('linkB').textContent = S.NAMES.b + 'の選択ページ';
     if (!room) return;
@@ -219,8 +219,8 @@
     });
     wireCopy(copyBtn, textFn, toastId);
   }
-  wireCopy('copyA', function () { return inviteText(S.NAMES.a, 'ani.html'); }, 'linkToast');
-  wireCopy('copyB', function () { return inviteText(S.NAMES.b, 'otouto.html'); }, 'linkToast');
+  wireCopy('copyA', function () { return inviteText(S.NAMES.a, 'a.html'); }, 'linkToast');
+  wireCopy('copyB', function () { return inviteText(S.NAMES.b, 'b.html'); }, 'linkToast');
   wireShare('btnLineResult', 'btnCopyResult', function () { return S.shareTextFor(room, S.decide(room)) + location.href; }, 'resultToast');
 
   // 自動更新: 20秒ごと、および画面に戻ったとき
