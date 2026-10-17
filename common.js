@@ -80,9 +80,15 @@
     return (withYear ? d.getFullYear() + '年' : '') + (d.getMonth() + 1) + '月' + d.getDate() + '日(' + WEEK[d.getDay()] + ') ' + d.getHours() + ':' + pad(d.getMinutes());
   }
   // 今日以降の直近2件
+  // リストは「①と②の組」が順に並んだもの(2件ずつ)。組の遅い方(②)の日が過ぎるまでは同じ組を出し、過ぎたら次の組に進む。
   function upcoming(dates, now) {
     var t0 = new Date(now || Date.now()); t0.setHours(0, 0, 0, 0);
-    return dates.filter(function (iso) { return parseIso(iso) >= t0; }).slice(0, 2);
+    for (var i = 0; i + 1 < dates.length; i += 2) {
+      if (parseIso(dates[i + 1]) >= t0) return [dates[i], dates[i + 1]];
+    }
+    // 奇数件で最後に1件だけ余ったとき
+    if (dates.length % 2 === 1 && parseIso(dates[dates.length - 1]) >= t0) return [dates[dates.length - 1]];
+    return [];
   }
   // 画面に出す「今回の候補日」と、その回に対する選択。リストがなければ手入力の d1/d2 を使う。
   function view(room, now) {
