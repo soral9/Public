@@ -1,17 +1,14 @@
-/* A・Bの選択ページ共通。 window.SALON_ROLE = 'a' | 'b' を各ページで指定 */
+/* A・Bの選択ページ共通。 window.APP_ROLE = 'a' | 'b' を各ページで指定 */
 (function () {
   'use strict';
-  var S = window.Salon, $ = S.$;
-  var role = window.SALON_ROLE === 'b' ? 'b' : 'a';
-  var me = S.NAMES[role], other = S.NAMES[role === 'a' ? 'b' : 'a'];
+  var S = window.App, $ = S.$;
+  var role = window.APP_ROLE === 'b' ? 'b' : 'a';
   var id = S.roomId();
   var room = null;
 
   function show(el, on) { el.hidden = !on; }
   function setErr(msg) { $('err').textContent = msg || ''; show($('err'), !!msg); }
 
-  document.title = me + 'の選択｜日程決め';
-  $('who').textContent = me;
   $('indexLink').href = id ? S.pageUrl('index.html', id) : 'index.html';
 
   if (!id) {
@@ -32,6 +29,9 @@
   }
   function render() {
     if (!room) return;
+    var me = S.NAMES[role], other = S.NAMES[role === 'a' ? 'b' : 'a'];
+    document.title = me + 'の選択｜' + S.title();
+    $('who').textContent = me;
     var v = S.view(room);
     $('d1').textContent = v.d1 || '(未入力)';
     $('d2').textContent = v.d2 || '(未入力)';

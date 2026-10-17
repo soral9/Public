@@ -1,9 +1,24 @@
 /* 共通: 選択肢・判定ロジック・保存先アダプタ */
 (function () {
   'use strict';
-  var CFG = window.SALON_CONFIG || {};
+  var CFG = window.APP_CONFIG || {};
   CFG.firebaseUrlFixed = String(CFG.firebaseUrl || '').trim();
-  var NAMES = CFG.names || { a: 'Aさん', b: 'Bさん' };
+  var DEF_NAMES = CFG.names || { a: 'Aさん', b: 'Bさん' };
+  var DEF_TITLE = CFG.title || '日程決め';
+  var NAMES = { a: DEF_NAMES.a, b: DEF_NAMES.b };
+  var TITLE = DEF_TITLE;
+  // 表示用の文言(名前・タイトルなど)はデータベース側(room.text)に持ち、公開コードには入れない
+  var TEXT_KEYS = ['title', 'a', 'b', 'hint'];
+  function cleanText(x) {
+    var t = {};
+    if (x && typeof x === 'object') TEXT_KEYS.forEach(function (k) { var v = String(x[k] || '').trim().slice(0, 60); if (v) t[k] = v; });
+    return t;
+  }
+  function applyText(room) {
+    var t = (room && room.text) || {};
+    NAMES.a = t.a || DEF_NAMES.a; NAMES.b = t.b || DEF_NAMES.b; TITLE = t.title || DEF_TITLE;
+    return room;
+  }
 
   var OPTIONS = [
     { v: -2, label: '絶対①', sub: '①じゃないと無理' },
@@ -15,7 +30,7 @@
   var LABEL = {}; OPTIONS.forEach(function (o) { LABEL[o.v] = o.label; });
   function isChoice(v) { return OPTIONS.some(function (o) { return o.v === v; }); }
 
-  function emptyRoom() { return { d1: '', d2: '', dates: [], round: '', a: null, b: null, updated: 0 }; }
+  function emptyRoom() { return { d1: '', d2: '', dates: [], round: '', a: null, b: null, text: {}, updated: 0 }; }
   function normalize(x) {
     var r = emptyRoom();
     if (x && typeof x === 'object') {
@@ -23,6 +38,7 @@
       r.dates = Array.isArray(x.dates) ? x.dates.filter(function (d) { return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(d); }).sort() : [];
       r.round = String(x.round || '');
       r.a = isChoice(x.a) ? x.a : null; r.b = isChoice(x.b) ? x.b : null;
+      r.text = cleanText(x.text);
       r.updated = Number(x.updated) || 0;
     }
     return r;
@@ -156,9 +172,9 @@
   // 保存先の決定: config.js の firebaseUrl > リンクの ?db= > この端末に保存したURL > jsonblob
   var params = new URLSearchParams(location.search);
   var dbFromLink = params.get('db') || '';
-  var dbSaved = ''; try { dbSaved = localStorage.getItem('salon-db') || ''; } catch (e) {}
+  var dbSaved = ''; try { dbSaved = localStorage.getItem('app-db') || ''; } catch (e) {}
   var dbUrl = String(CFG.firebaseUrl || '').trim() || dbFromLink || dbSaved;
-  if (dbFromLink) { try { localStorage.setItem('salon-db', dbFromLink); } catch (e) {} }
+  if (dbFromLink) { try { localStorage.setItem('app-db', dbFromLink); } catch (e) {} }
   if (CFG.jsonblobUrl) stores.jsonblob.base = String(CFG.jsonblobUrl).replace(/\/+$/, '');
   var store;
   if (dbUrl) { store = stores.firebase; CFG.firebaseUrl = dbUrl; }
@@ -167,7 +183,7 @@
   function setDbUrl(url) {
     url = String(url || '').trim().replace(/\/+$/, '');
     if (!/^https:\/\/[a-z0-9-]+\.(firebaseio\.com|[a-z0-9-]+\.firebasedatabase\.app)$/.test(url)) return false;
-    try { localStorage.setItem('salon-db', url); } catch (e) {}
+    try { localStorage.setItem('app-db', url); } catch (e) {}
     CFG.firebaseUrl = url; dbUrl = url; store = stores.firebase; storeName = 'firebase';
     return true;
   }
@@ -180,11 +196,12 @@
     u.search = q;
     return u.toString();
   }
-  function loadRoom(id) { return store.load(id).then(normalize); }
+  function loadRoom(id) { return store.load(id).then(normalize).then(applyText); }
   // 最新を読み直してから自分の変更だけを上書き保存(同時操作で相手の選択を消さないため)
   function updateRoom(id, patch) {
     return loadRoom(id).then(function (cur) {
       Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+      cur.text = cleanText(cur.text); applyText(cur);
       cur.updated = Date.now();
       return store.save(id, cur).then(function () { return cur; });
     });
@@ -227,9 +244,9 @@
     var v = view(room);
     if (r) {
       var a1 = r.aTo === 1 ? NAMES.a : NAMES.b, a2 = r.aTo === 1 ? NAMES.b : NAMES.a;
-      return '【日程決め 結果】\n① ' + v.d1 + ' → ' + a1 + '\n② ' + v.d2 + ' → ' + a2 + '\n';
+      return '【' + TITLE + ' 結果】\n① ' + v.d1 + ' → ' + a1 + '\n② ' + v.d2 + ' → ' + a2 + '\n';
     }
-    return '【日程決め】\n① ' + v.d1 + '\n② ' + v.d2 + '\n';
+    return '【' + TITLE + '】\n① ' + v.d1 + '\n② ' + v.d2 + '\n';
   }
   function lineShareUrl(text) { return 'https://line.me/R/share?text=' + encodeURIComponent(text); }
   function copyText(text) {
@@ -242,8 +259,8 @@
   }
   function fmtTime(ms) { if (!ms) return ''; var d = new Date(ms); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2); }
 
-  window.Salon = {
-    NAMES: NAMES, OPTIONS: OPTIONS, LABEL: LABEL, decide: decide, normalize: normalize,
+  window.App = {
+    NAMES: NAMES, TEXT_KEYS: TEXT_KEYS, title: function () { return TITLE; }, applyText: applyText, OPTIONS: OPTIONS, LABEL: LABEL, decide: decide, normalize: normalize,
     roomId: roomId, pageUrl: pageUrl, loadRoom: loadRoom, updateRoom: updateRoom, saveChoice: saveChoice, createRoom: createRoom,
     view: view, parseDates: parseDates, parseDatesAuto: parseDatesAuto, fmtDate: fmtDate, upcoming: upcoming,
     $: $, renderResultInto: renderResultInto, shareTextFor: shareTextFor, lineShareUrl: lineShareUrl,
