@@ -14,9 +14,11 @@
     if (x && typeof x === 'object') TEXT_KEYS.forEach(function (k) { var v = String(x[k] || '').trim().slice(0, 60); if (v) t[k] = v; });
     return t;
   }
+  // URLパラメータ(?a=名前&b=名前&t=題材)があれば最優先。次にデータベース(room.text)、最後に既定値
+  var URL_TEXT = {};
   function applyText(room) {
     var t = (room && room.text) || {};
-    NAMES.a = t.a || DEF_NAMES.a; NAMES.b = t.b || DEF_NAMES.b; TITLE = t.title || DEF_TITLE;
+    NAMES.a = URL_TEXT.a || t.a || DEF_NAMES.a; NAMES.b = URL_TEXT.b || t.b || DEF_NAMES.b; TITLE = URL_TEXT.t || t.title || DEF_TITLE;
     return room;
   }
 
@@ -172,6 +174,8 @@
   // 保存先の決定: config.js の firebaseUrl > リンクの ?db= > この端末に保存したURL > jsonblob
   var params = new URLSearchParams(location.search);
   var dbFromLink = params.get('db') || '';
+  ['a', 'b', 't'].forEach(function (k) { var v = String(params.get(k) || '').trim().slice(0, 60); if (v) URL_TEXT[k] = v; });
+  applyText(null);
   var dbSaved = ''; try { dbSaved = localStorage.getItem('app-db') || ''; } catch (e) {}
   var dbUrl = String(CFG.firebaseUrl || '').trim() || dbFromLink || dbSaved;
   if (dbFromLink) { try { localStorage.setItem('app-db', dbFromLink); } catch (e) {} }
@@ -193,6 +197,8 @@
     var q = '?r=' + encodeURIComponent(id);
     // config.js に書いていないときだけ、リンクでDBのURLを引き継ぐ
     if (dbUrl && !CFG.firebaseUrlFixed) q += '&db=' + encodeURIComponent(dbUrl);
+    // 名前・題材のパラメータもリンクに引き継ぐ
+    Object.keys(URL_TEXT).forEach(function (k) { q += '&' + k + '=' + encodeURIComponent(URL_TEXT[k]); });
     u.search = q;
     return u.toString();
   }
