@@ -225,6 +225,26 @@
 
   // ---- 共通UI ----
   function $(id) { return document.getElementById(id); }
+  // ---- カレンダー登録(.ics) ----
+  function icsFor(iso, summary, minutes) {
+    var s = parseIso(iso), e = new Date(s.getTime() + (minutes || 60) * 60000);
+    function f(d) { return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00'; }
+    function esc(t) { return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+    var now = new Date(), stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+    return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//app//JP', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', 'UID:' + iso.replace(/\D/g, '') + '-' + hash(summary) + '@app', 'DTSTAMP:' + stamp,
+      'DTSTART:' + f(s), 'DTEND:' + f(e), 'SUMMARY:' + esc(summary), 'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n';
+  }
+  // iPhone/iPad の Safari は data:text/calendar を開くとカレンダーの追加画面になる。それ以外はファイルとして保存
+  function addToCalendar(iso, summary) {
+    var ics = icsFor(iso, summary);
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (ios) { location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics); return; }
+    var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'event.ics';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+  }
   function renderResultInto(box, room) {
     var v = view(room);
     var r = decide(v); box.innerHTML = '';
@@ -236,6 +256,12 @@
       d.innerHTML = '<span class="tag ' + (p[1] === 1 ? 'd1' : 'd2') + '">' + (p[1] === 1 ? '①' : '②') + '</span><span class="who"></span><span class="when"></span>';
       d.querySelector('.who').textContent = p[0];
       d.querySelector('.when').textContent = (p[1] === 1 ? v.d1 : v.d2) || '(候補日 未入力)';
+      var iso = v.next[p[1] - 1];
+      if (iso) {
+        var cb = document.createElement('button'); cb.type = 'button'; cb.className = 'cal'; cb.textContent = 'カレンダーに登録';
+        cb.addEventListener('click', function () { addToCalendar(iso, TITLE + ' ' + p[0]); });
+        d.appendChild(cb);
+      }
       assign.appendChild(d);
     });
     box.appendChild(assign);
@@ -270,6 +296,6 @@
     roomId: roomId, pageUrl: pageUrl, loadRoom: loadRoom, updateRoom: updateRoom, saveChoice: saveChoice, createRoom: createRoom,
     view: view, parseDates: parseDates, parseDatesAuto: parseDatesAuto, fmtDate: fmtDate, upcoming: upcoming,
     $: $, renderResultInto: renderResultInto, shareTextFor: shareTextFor, lineShareUrl: lineShareUrl,
-    copyText: copyText, fmtTime: fmtTime, setDbUrl: setDbUrl, storeName: function () { return storeName; }, dbUrl: function () { return dbUrl; }
+    copyText: copyText, fmtTime: fmtTime, icsFor: icsFor, addToCalendar: addToCalendar, setDbUrl: setDbUrl, storeName: function () { return storeName; }, dbUrl: function () { return dbUrl; }
   };
 })();
