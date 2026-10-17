@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="style.css?v=5">
-<script src="config.js?v=5"></script>
-<script src="common.js?v=5"></script>
+<link rel="stylesheet" href="style.css?v=6">
+<script src="config.js?v=6"></script>
+<script src="common.js?v=6"></script>
 <title>日程決め</title>
 <meta name="description" content="2つの候補日に対してAさんとBさんが5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
 </head>
@@ -67,16 +67,13 @@
         <span class="name" id="nameA"></span>
         <span class="pill" id="pillA"></span>
         <a class="btn" id="linkA" href="#">Aさんの選択ページ</a>
-        <button class="btn secondary" id="copyA">リンクをコピー</button>
       </div>
       <div class="person">
         <span class="name" id="nameB"></span>
         <span class="pill" id="pillB"></span>
         <a class="btn" id="linkB" href="#">Bさんの選択ページ</a>
-        <button class="btn secondary" id="copyB">リンクをコピー</button>
       </div>
     </div>
-    <div class="toast" id="linkToast" aria-live="polite"></div>
   </section>
 
   <section class="card" id="secR" hidden>
@@ -96,7 +93,7 @@
 
   <section class="card" id="tools" hidden>
     <div class="actions">
-      <button class="btn secondary" id="btnReset">選択をリセット</button>
+      <button class="btn danger" id="btnReset">選択をリセット</button>
     </div>
     <details id="textBox">
       <summary class="sub">表示する名前・文言（データベースに保存）</summary>
@@ -112,7 +109,7 @@
         <div class="toast" id="textToast" aria-live="polite"></div>
       </div>
     </details>
-    <p class="sub" id="resetConfirm" hidden>2人の選択を消します（候補日リストは残ります）。よろしければもう一度「選択をリセット」を押してください。</p>
+    <p class="note err" id="resetConfirm" hidden>2人の選択を消します（候補日リストは残ります）。本当に消すなら、もう一度「選択をリセット」を押してください。</p>
     <p class="note err" id="err" hidden></p>
   </section>
 
@@ -159,6 +156,8 @@
     renderDateList(room.dates, v.next);
     $('yearlyBox').open = !room.dates.length || $('yearlyBox').open;
     setPill($('pillA'), v.a !== null); setPill($('pillB'), v.b !== null);
+    // 回答済みの人には選択ページのリンクを出さない
+    show($('linkA'), v.a === null); show($('linkB'), v.b === null);
     var r = S.renderResultInto($('result'), room);
     show($('secR'), !!r); show($('waiting'), !r);
     if (!r) {
@@ -226,17 +225,20 @@
       .catch(function (e) { setErr('保存に失敗しました。(' + e.message + ')'); })
       .then(function () { $('btnSaveText').disabled = false; });
   });
+  var resetTimer = null;
+  function disarmReset() { resetArmed = false; show($('resetConfirm'), false); $('btnReset').textContent = '選択をリセット'; if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; } }
   $('btnReset').addEventListener('click', function () {
-    if (!resetArmed) { resetArmed = true; show($('resetConfirm'), true); return; }
-    resetArmed = false; show($('resetConfirm'), false);
+    if (!resetArmed) {
+      resetArmed = true; show($('resetConfirm'), true); $('btnReset').textContent = 'もう一度押すとリセット';
+      resetTimer = setTimeout(disarmReset, 8000); // 8秒たったら取り消し
+      return;
+    }
+    disarmReset();
     S.updateRoom(id, { a: null, b: null, round: '' }).then(function (r) { room = r; render(); })
       .catch(function (e) { setErr('リセットに失敗しました。(' + e.message + ')'); });
   });
 
   function toast(elId, m) { $(elId).textContent = m; setTimeout(function () { $(elId).textContent = ''; }, 3000); }
-  function inviteText(who, file) {
-    return '【' + S.title() + '】\n' + (room ? '① ' + room.d1 + '\n② ' + room.d2 + '\n' : '') + who + 'の希望を選んでね↓\n' + S.pageUrl(file, id);
-  }
   function wireCopy(copyBtn, textFn, toastId) {
     $(copyBtn).addEventListener('click', function () { S.copyText(textFn()).then(function () { toast(toastId, 'コピーしました。'); }); });
   }
@@ -248,8 +250,6 @@
     });
     wireCopy(copyBtn, textFn, toastId);
   }
-  wireCopy('copyA', function () { return inviteText(S.NAMES.a, 'a.html'); }, 'linkToast');
-  wireCopy('copyB', function () { return inviteText(S.NAMES.b, 'b.html'); }, 'linkToast');
   wireShare('btnLineResult', 'btnCopyResult', function () { return S.shareTextFor(room, S.decide(room)) + location.href; }, 'resultToast');
 
   // 自動更新: 20秒ごと、および画面に戻ったとき
