@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="style.css?v=6">
-<script src="config.js?v=6"></script>
-<script src="common.js?v=6"></script>
+<link rel="stylesheet" href="style.css?v=7">
+<script src="config.js?v=7"></script>
+<script src="common.js?v=7"></script>
 <title>日程決め</title>
 <meta name="description" content="2つの候補日に対してAさんとBさんが5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
 </head>
@@ -158,6 +158,8 @@
     setPill($('pillA'), v.a !== null); setPill($('pillB'), v.b !== null);
     // 回答済みの人には選択ページのリンクを出さない
     show($('linkA'), v.a === null); show($('linkB'), v.b === null);
+    // 2人とも回答済みなら枠ごと消す
+    show($('people'), v.a === null || v.b === null);
     var r = S.renderResultInto($('result'), room);
     show($('secR'), !!r); show($('waiting'), !r);
     if (!r) {
