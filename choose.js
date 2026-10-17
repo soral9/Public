@@ -33,8 +33,12 @@
     document.title = me + 'の選択｜' + S.title();
     $('who').textContent = me;
     var v = S.view(room);
-    $('d1').textContent = v.d1 || '(未入力)';
-    $('d2').textContent = v.d2 || '(未入力)';
+    var hasDates = !!(v.d1 && v.d2);
+    $('d1').textContent = v.d1 || (v.auto ? '(リストに今日以降の日付がありません)' : '(未登録)');
+    $('d2').textContent = v.d2 || (v.auto ? '(次の候補日がありません)' : '(未登録)');
+    show($('noDates'), !hasDates);
+    show($('secChoose'), hasDates);
+    if (!hasDates) { show($('secR'), false); show($('waiting'), false); return; }
     renderChoices(v);
     var mine = v[role] !== null;
     $('state').textContent = mine

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="style.css">
-<script src="config.js"></script>
-<script src="common.js"></script>
+<link rel="stylesheet" href="style.css?v=4">
+<script src="config.js?v=4"></script>
+<script src="common.js?v=4"></script>
 <title>Aさんの選択｜日程決め</title>
 </head>
 <body>
@@ -19,6 +19,7 @@
       <div><span class="tag d1">①</span> <span id="d1">…</span></div>
       <div><span class="tag d2">②</span> <span id="d2">…</span></div>
     </div>
+    <p class="note err" id="noDates" hidden>候補日がまだ登録されていません。トップページで候補日（年間リスト）を保存してから、このページを開き直してください。</p>
   </section>
   <section class="card" id="secChoose">
     <span class="eyebrow">希望</span>
@@ -42,6 +43,6 @@
   </section>
 </main>
 <script>window.APP_ROLE = 'a';</script>
-<script src="choose.js"></script>
+<script src="choose.js?v=4"></script>
 </body>
 </html>

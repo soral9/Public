@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="style.css">
-<script src="config.js"></script>
-<script src="common.js"></script>
+<link rel="stylesheet" href="style.css?v=4">
+<script src="config.js?v=4"></script>
+<script src="common.js?v=4"></script>
 <title>日程決め</title>
 <meta name="description" content="2つの候補日に対してAさんとBさんが5段階で希望を出し、どちらが①・②の日に行くかを自動で決めます。">
 </head>
@@ -20,6 +20,7 @@
     <p class="sub">2人の選択を共有するため、Googleの無料サービス Firebase にデータを置きます。<a href="https://github.com/soral9/Public#firebase-の準備5分" target="_blank" rel="noopener">準備手順</a>のとおりに作った Realtime Database のURLを貼り付けてください。</p>
     <label class="field">Realtime Database のURL<input id="dbUrl" placeholder="https://xxxx-default-rtdb.firebaseio.com" inputmode="url" autocomplete="off"></label>
     <div class="actions"><button class="btn" id="btnCreate">部屋を作る</button></div>
+    <p class="sub" id="lastRoomBox" hidden>前に使った部屋があります: <a id="lastRoom" href="#">前回の部屋を開く</a>（新しく作ると候補日はまた登録が必要です）</p>
     <p class="note err" id="createErr" hidden></p>
     <details>
       <summary class="sub">Firebase を使わずに試す</summary>
@@ -128,6 +129,8 @@
 
   function render() {
     show($('noRoom'), !id);
+    if (id) { try { localStorage.setItem('app-room', id); } catch (e) {} }
+    else { var last = ''; try { last = localStorage.getItem('app-room') || ''; } catch (e) {} if (last) { $('lastRoom').href = S.pageUrl('index.html', last); show($('lastRoomBox'), true); } }
     if (!id && S.storeName() === 'firebase' && !$('dbUrl').value) $('dbUrl').value = S.dbUrl();
     ['dates', 'yearly', 'people', 'tools'].forEach(function (k) { show($(k), !!id); });
     if (!id) { show($('secR'), false); show($('waiting'), false); return; }
