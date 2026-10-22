@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var S = window.App, $ = S.$;
-  var role = window.APP_ROLE === 'b' ? 'b' : 'a';
+  var role = (document.currentScript && document.currentScript.getAttribute('data-role')) === 'b' ? 'b' : 'a';
   var id = S.roomId();
   var room = null;
 

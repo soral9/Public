@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="style.css?v=8">
-<script src="config.js?v=8"></script>
-<script src="common.js?v=8"></script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://*.firebaseio.com https://*.firebasedatabase.app https://jsonblob.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="style.css?v=9">
+<script src="config.js?v=9"></script>
+<script src="common.js?v=9"></script>
 <title>Bさんの選択｜日程決め</title>
 </head>
 <body>
@@ -42,7 +44,6 @@
     <p class="note err" id="err" hidden></p>
   </section>
 </main>
-<script>window.APP_ROLE = 'b';</script>
-<script src="choose.js?v=8"></script>
+<script src="choose.js?v=9" data-role="b"></script>
 </body>
 </html>
